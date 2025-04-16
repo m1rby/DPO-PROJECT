@@ -9,6 +9,34 @@ from django.utils import timezone
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST
 
+def get_template_name(template_name, request):
+    """Возвращает имя шаблона с учетом языка"""
+    if request.LANGUAGE_CODE == 'ru':
+        return template_name.replace('.html', '_ru.html')
+    return template_name
+
+def get_message(message_key, request):
+    """Возвращает сообщение на нужном языке"""
+    messages = {
+        'artwork_created': {
+            'en': 'Artwork created successfully!',
+            'ru': 'Произведение успешно добавлено!'
+        },
+        'artwork_added_to_cart': {
+            'en': 'Artwork added to cart!',
+            'ru': 'Произведение добавлено в корзину!'
+        },
+        'order_placed': {
+            'en': 'Order placed successfully!',
+            'ru': 'Заказ успешно оформлен!'
+        },
+        'profile_updated': {
+            'en': 'Profile updated successfully!',
+            'ru': 'Профиль успешно обновлен!'
+        }
+    }
+    return messages[message_key][request.LANGUAGE_CODE]
+
 def home(request):
     artworks = Artwork.objects.filter(is_sold=False).order_by('-created_at')[:12]
     search_form = ArtworkSearchForm(request.GET)
@@ -32,7 +60,7 @@ def home(request):
         if max_price:
             artworks = artworks.filter(price__lte=max_price)
     
-    return render(request, 'marketplace/home.html', {
+    return render(request, get_template_name('marketplace/home.html', request), {
         'artworks': artworks,
         'search_form': search_form
     })
@@ -45,17 +73,19 @@ def create_artwork(request):
             artwork = form.save(commit=False)
             artwork.artist = request.user
             artwork.save()
-            messages.success(request, 'Artwork created successfully!')
+            messages.success(request, get_message('artwork_created', request))
             return redirect('artwork_detail', pk=artwork.pk)
     else:
         form = ArtworkForm()
-    return render(request, 'marketplace/create_artwork.html', {'form': form})
+    return render(request, get_template_name('marketplace/create_artwork.html', request), {'form': form})
 
 @login_required
 @require_POST
 def toggle_like(request, artwork_id):
+    print(f"Toggle like request received for artwork {artwork_id} from user {request.user.username}")
     artwork = get_object_or_404(Artwork, id=artwork_id)
     is_liked = artwork.toggle_like(request.user)
+    print(f"Like status: {is_liked}, Likes count: {artwork.get_likes_count()}")
     return JsonResponse({
         'is_liked': is_liked,
         'likes_count': artwork.get_likes_count()
@@ -68,7 +98,7 @@ def artwork_detail(request, pk):
     if request.user.is_authenticated:
         is_liked = request.user in artwork.likes.all()
     
-    return render(request, 'marketplace/artwork_detail.html', {
+    return render(request, get_template_name('marketplace/artwork_detail.html', request), {
         'artwork': artwork,
         'is_liked': is_liked
     })
@@ -84,14 +114,14 @@ def add_to_cart(request, pk):
     if not created:
         cart_item.quantity += 1
         cart_item.save()
-    messages.success(request, 'Artwork added to cart!')
+    messages.success(request, get_message('artwork_added_to_cart', request))
     return redirect('cart')
 
 @login_required
 def cart(request):
     cart_items = Cart.objects.filter(user=request.user)
     total = sum(item.artwork.price * item.quantity for item in cart_items)
-    return render(request, 'marketplace/cart.html', {
+    return render(request, get_template_name('marketplace/cart.html', request), {
         'cart_items': cart_items,
         'total': total
     })
@@ -113,10 +143,10 @@ def checkout(request):
             item.artwork.save()
             item.delete()
         
-        messages.success(request, 'Order placed successfully!')
+        messages.success(request, get_message('order_placed', request))
         return redirect('orders')
     
-    return render(request, 'marketplace/checkout.html', {
+    return render(request, get_template_name('marketplace/checkout.html', request), {
         'cart_items': cart_items,
         'total': total
     })
@@ -124,7 +154,7 @@ def checkout(request):
 @login_required
 def orders(request):
     orders = Order.objects.filter(user=request.user).order_by('-created_at')
-    return render(request, 'marketplace/orders.html', {'orders': orders})
+    return render(request, get_template_name('marketplace/orders.html', request), {'orders': orders})
 
 @login_required
 def profile(request):
@@ -133,13 +163,13 @@ def profile(request):
         form = UserProfileForm(request.POST, request.FILES, instance=profile)
         if form.is_valid():
             form.save()
-            messages.success(request, 'Profile updated successfully!')
+            messages.success(request, get_message('profile_updated', request))
             return redirect('profile')
     else:
         form = UserProfileForm(instance=profile)
     
     artworks = Artwork.objects.filter(artist=request.user)
-    return render(request, 'marketplace/profile.html', {
+    return render(request, get_template_name('marketplace/profile.html', request), {
         'form': form,
         'profile': profile,
         'artworks': artworks

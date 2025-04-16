@@ -25,6 +25,8 @@
 }
 
 .auth-title {
+    font-family: "Boldonse", system-ui;
+    font-style: normal;
     color: #2c3e50;
     font-size: 28px;
     font-weight: 600;

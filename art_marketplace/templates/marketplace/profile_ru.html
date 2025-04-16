@@ -1,0 +1,97 @@
+{% extends 'base_ru.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Ваш профиль - Арт Маркетплейс{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-4">
+        <div class="card mb-4">
+            <div class="card-body text-center">
+                {% if profile.profile_picture %}
+                <img src="{{ profile.profile_picture.url }}" class="rounded-circle mb-3" alt="Фото профиля" style="width: 150px; height: 150px; object-fit: cover;">
+                {% else %}
+                <div class="rounded-circle mb-3 bg-light d-flex align-items-center justify-content-center" style="width: 150px; height: 150px; margin: 0 auto;">
+                    <i class="bi bi-person" style="font-size: 4rem;"></i>
+                </div>
+                {% endif %}
+                <h2>{{ user.get_full_name }}</h2>
+                <p class="text-muted">@{{ user.username }}</p>
+                <p class="mb-0">Баланс: ${{ profile.balance }}</p>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-body">
+                <h3 class="h5 mb-3">Обновить профиль</h3>
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    {{ form|crispy }}
+                    <button type="submit" class="btn btn-primary w-100">Сохранить изменения</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-8">
+        <div class="card mb-4">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h2 class="h4 mb-0">Ваши произведения</h2>
+                    <a href="{% url 'create_artwork' %}" class="btn btn-primary">
+                        <i class="bi bi-plus"></i> Добавить произведение
+                    </a>
+                </div>
+                
+                {% if artworks %}
+                <div class="row">
+                    {% for artwork in artworks %}
+                    <div class="col-md-6 mb-4">
+                        <div class="card h-100">
+                            <img src="{{ artwork.image.url }}" class="card-img-top" alt="{{ artwork.title }}" style="height: 200px; object-fit: cover;">
+                            <div class="card-body">
+                                <h5 class="card-title">{{ artwork.title }}</h5>
+                                <p class="card-text text-muted">${{ artwork.price }}</p>
+                                <div class="d-flex justify-content-between">
+                                    <a href="{% url 'artwork_detail' artwork.pk %}" class="btn btn-outline-primary btn-sm">
+                                        <i class="bi bi-eye"></i> Просмотр
+                                    </a>
+                                    <span class="badge {% if artwork.is_sold %}bg-danger{% else %}bg-success{% endif %}">
+                                        {% if artwork.is_sold %}Продано{% else %}Доступно{% endif %}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="alert alert-info">
+                    Вы еще не добавили ни одного произведения. <a href="{% url 'create_artwork' %}">Добавьте свое первое произведение</a>, чтобы начать продавать.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-body">
+                <h2 class="h4 mb-4">Статистика аккаунта</h2>
+                <div class="row">
+                    <div class="col-md-4 text-center">
+                        <h3 class="h5">Общий объем продаж</h3>
+                        <p class="h2 text-primary">${{ total_sales|default:"0" }}</p>
+                    </div>
+                    <div class="col-md-4 text-center">
+                        <h3 class="h5">Проданные произведения</h3>
+                        <p class="h2 text-primary">{{ artworks_sold|default:"0" }}</p>
+                    </div>
+                    <div class="col-md-4 text-center">
+                        <h3 class="h5">Активные объявления</h3>
+                        <p class="h2 text-primary">{{ active_listings|default:"0" }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 
