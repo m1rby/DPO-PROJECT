@@ -1,0 +1,124 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}{{ artwork.title }} - Art Marketplace{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <div class="card mb-4">
+            <img src="{{ artwork.image.url }}" class="card-img-top" alt="{{ artwork.title }}" style="max-height: 500px; object-fit: contain;">
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body">
+                <h1 class="card-title h2">{{ artwork.title }}</h1>
+                <p class="text-muted">by {{ artwork.artist.username }}</p>
+                <hr>
+                <h3 class="text-primary">${{ artwork.price }}</h3>
+                <p class="card-text">{{ artwork.description }}</p>
+                
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div>
+                        <i class="bi bi-eye"></i> {{ artwork.views }} views
+                    </div>
+                    <div>
+                        <button id="like-button" class="btn btn-outline-danger {% if is_liked %}active{% endif %}" 
+                                data-artwork-id="{{ artwork.id }}">
+                            <i class="bi bi-heart{% if is_liked %}-fill{% endif %}"></i>
+                            <span id="likes-count">{{ artwork.get_likes_count }}</span>
+                        </button>
+                    </div>
+                </div>
+                
+                {% if artwork.category %}
+                <p><strong>Category:</strong> {{ artwork.category }}</p>
+                {% endif %}
+                
+                {% if artwork.dimensions %}
+                <p><strong>Dimensions:</strong> {{ artwork.dimensions }}</p>
+                {% endif %}
+                
+                {% if artwork.materials %}
+                <p><strong>Materials:</strong> {{ artwork.materials }}</p>
+                {% endif %}
+                
+                <p class="text-muted"><small>Posted on {{ artwork.created_at|date:"F j, Y" }}</small></p>
+                
+                {% if not artwork.is_sold %}
+                    {% if user.is_authenticated and user != artwork.artist %}
+                    <form method="post" action="{% url 'add_to_cart' artwork.pk %}">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-primary btn-lg w-100">
+                            <i class="bi bi-cart-plus"></i> Add to Cart
+                        </button>
+                    </form>
+                    {% elif user == artwork.artist %}
+                    <div class="alert alert-info">
+                        This is your artwork. You cannot purchase your own artwork.
+                    </div>
+                    {% else %}
+                    <div class="alert alert-warning">
+                        Please <a href="{% url 'account_login' %}">login</a> to purchase this artwork.
+                    </div>
+                    {% endif %}
+                {% else %}
+                <div class="alert alert-danger">
+                    This artwork has been sold.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if user.is_authenticated and user == artwork.artist %}
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <h2 class="h4">Artwork Statistics</h2>
+                <p>Views: {{ artwork.views }}</p>
+                <p>Likes: {{ artwork.get_likes_count }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const likeButton = document.getElementById('like-button');
+    const likesCount = document.getElementById('likes-count');
+    
+    likeButton.addEventListener('click', function() {
+        const artworkId = this.dataset.artworkId;
+        
+        fetch(`/artwork/${artworkId}/toggle-like/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                'Content-Type': 'application/json'
+            },
+            credentials: 'same-origin'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.is_liked) {
+                likeButton.classList.add('active');
+                likeButton.querySelector('i').classList.remove('bi-heart');
+                likeButton.querySelector('i').classList.add('bi-heart-fill');
+            } else {
+                likeButton.classList.remove('active');
+                likeButton.querySelector('i').classList.remove('bi-heart-fill');
+                likeButton.querySelector('i').classList.add('bi-heart');
+            }
+            likesCount.textContent = data.likes_count;
+        });
+    });
+});
+</script>
+{% endblock %}
+{% endblock %} 

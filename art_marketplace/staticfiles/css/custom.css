@@ -1,0 +1,126 @@
+/* Custom styles for Art Marketplace */
+
+/* Artwork cards */
+.artwork-card {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.artwork-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+}
+
+/* Profile picture */
+.profile-picture {
+    width: 150px;
+    height: 150px;
+    object-fit: cover;
+    border: 5px solid white;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+/* Form styling */
+.form-control:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 0.2rem rgba(108, 92, 231, 0.25);
+}
+
+/* Button styling */
+.btn-primary {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+.btn-primary:hover {
+    background-color: var(--secondary-color);
+    border-color: var(--secondary-color);
+}
+
+/* Cart items */
+.cart-item {
+    transition: background-color 0.3s ease;
+}
+
+.cart-item:hover {
+    background-color: rgba(108, 92, 231, 0.05);
+}
+
+/* Order status badges */
+.status-badge {
+    padding: 0.5em 1em;
+    border-radius: 20px;
+    font-weight: 500;
+}
+
+.status-completed {
+    background-color: #28a745;
+    color: white;
+}
+
+.status-pending {
+    background-color: #ffc107;
+    color: #212529;
+}
+
+.status-cancelled {
+    background-color: #dc3545;
+    color: white;
+}
+
+/* Search form */
+.search-form {
+    background-color: white;
+    border-radius: 10px;
+    padding: 1.5rem;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+/* Footer links */
+.footer-link {
+    color: #6c757d;
+    text-decoration: none;
+    transition: color 0.3s ease;
+}
+
+.footer-link:hover {
+    color: var(--primary-color);
+}
+
+/* Social icons */
+.social-icon {
+    font-size: 1.5rem;
+    color: #6c757d;
+    transition: color 0.3s ease;
+}
+
+.social-icon:hover {
+    color: var(--primary-color);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .profile-picture {
+        width: 100px;
+        height: 100px;
+    }
+    
+    .artwork-image {
+        height: 150px;
+    }
+}
+
+/* Animation for alerts */
+.alert {
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+} 

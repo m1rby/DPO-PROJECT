@@ -1,0 +1,66 @@
+{% extends 'base.html' %}
+
+{% block title %}Your Orders - Art Marketplace{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1 class="mb-4">Your Orders</h1>
+        
+        {% if orders %}
+        <div class="card">
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Order #</th>
+                                <th>Artwork</th>
+                                <th>Artist</th>
+                                <th>Price</th>
+                                <th>Date</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for order in orders %}
+                            <tr>
+                                <td>{{ order.id }}</td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <img src="{{ order.artwork.image.url }}" class="rounded me-3" alt="{{ order.artwork.title }}" style="width: 50px; height: 50px; object-fit: cover;">
+                                        <div>
+                                            <h6 class="mb-0">{{ order.artwork.title }}</h6>
+                                            <small class="text-muted">Qty: {{ order.quantity }}</small>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>{{ order.artwork.artist.username }}</td>
+                                <td>${{ order.total_price }}</td>
+                                <td>{{ order.created_at|date:"M d, Y" }}</td>
+                                <td>
+                                    <span class="badge {% if order.status == 'completed' %}bg-success{% elif order.status == 'cancelled' %}bg-danger{% else %}bg-warning{% endif %}">
+                                        {{ order.status|title }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <a href="{% url 'artwork_detail' order.artwork.pk %}" class="btn btn-sm btn-outline-primary">
+                                        <i class="bi bi-eye"></i> View
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="alert alert-info">
+            You haven't placed any orders yet. <a href="{% url 'home' %}">Browse artworks</a> to make your first purchase.
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %} 

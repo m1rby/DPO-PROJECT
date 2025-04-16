@@ -1,0 +1,97 @@
+{% extends 'base.html' %}
+
+{% block title %}Shopping Cart - Art Marketplace{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <h1 class="mb-4">Your Shopping Cart</h1>
+        
+        {% if cart_items %}
+        <div class="card">
+            <div class="card-body">
+                {% for item in cart_items %}
+                <div class="row align-items-center mb-4 pb-4 border-bottom">
+                    <div class="col-md-3">
+                        <img src="{{ item.artwork.image.url }}" class="img-fluid rounded" alt="{{ item.artwork.title }}">
+                    </div>
+                    <div class="col-md-6">
+                        <h5 class="card-title">{{ item.artwork.title }}</h5>
+                        <p class="text-muted">by {{ item.artwork.artist.username }}</p>
+                        <p class="card-text">{{ item.artwork.description|truncatewords:20 }}</p>
+                    </div>
+                    <div class="col-md-3 text-end">
+                        <h5>${{ item.artwork.price }}</h5>
+                        <div class="btn-group">
+                            <a href="{% url 'artwork_detail' item.artwork.pk %}" class="btn btn-outline-primary btn-sm">
+                                <i class="bi bi-eye"></i> View
+                            </a>
+                            <a href="#" class="btn btn-outline-danger btn-sm" onclick="removeFromCart({{ item.id }})">
+                                <i class="bi bi-trash"></i> Remove
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% else %}
+        <div class="alert alert-info">
+            Your cart is empty. <a href="{% url 'home' %}">Browse artworks</a> to add items to your cart.
+        </div>
+        {% endif %}
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body">
+                <h2 class="h4">Order Summary</h2>
+                <hr>
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Subtotal:</span>
+                    <span>${{ total }}</span>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Shipping:</span>
+                    <span>Free</span>
+                </div>
+                <hr>
+                <div class="d-flex justify-content-between mb-3">
+                    <strong>Total:</strong>
+                    <strong>${{ total }}</strong>
+                </div>
+                
+                {% if cart_items %}
+                <a href="{% url 'checkout' %}" class="btn btn-primary btn-lg w-100">
+                    Proceed to Checkout
+                </a>
+                {% else %}
+                <button class="btn btn-primary btn-lg w-100" disabled>
+                    Proceed to Checkout
+                </button>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function removeFromCart(cartItemId) {
+    if (confirm('Are you sure you want to remove this item from your cart?')) {
+        fetch(`/cart/remove/${cartItemId}/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            }
+        });
+    }
+}
+</script>
+{% endblock %} 
