@@ -1,5 +1,5 @@
 {% load i18n %}
-
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -36,129 +36,99 @@
             font-family: 'Boldonse', sans-serif;
             font-size: 1.5rem;
             letter-spacing: 1px;
-        }
-        
-        .nav-link {
-            color: var(--text-color) !important;
-        }
-        
-        .nav-link:hover {
-            color: var(--primary-color) !important;
-        }
-        
-        .btn-primary {
-            background-color: var(--primary-color);
-            border-color: var(--primary-color);
-        }
-        
-        .btn-primary:hover {
-            background-color: var(--secondary-color);
-            border-color: var(--secondary-color);
-        }
-        
-        .card {
-            border: none;
-            border-radius: 10px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            transition: transform 0.3s ease;
-        }
-        
-        .card:hover {
-            transform: translateY(-5px);
-        }
-        
-        .artwork-image {
-            height: 200px;
-            object-fit: cover;
-            border-radius: 10px 10px 0 0;
-        }
-        
-        footer {
-            background-color: white;
-            padding: 2rem 0;
-            margin-top: 3rem;
-            box-shadow: 0 -2px 4px rgba(0,0,0,0.1);
-        }
-
-        .language-switcher {
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 0.5rem;
         }
-
-        .language-switcher img {
-            width: 24px;
-            height: 24px;
-            cursor: pointer;
-            transition: transform 0.2s;
+        
+        .logo-circle {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            border: 2px solid var(--primary-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 0.5rem;
         }
-
-        .language-switcher img:hover {
-            transform: scale(1.1);
+        
+        .logo-circle-inner {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            border: 2px solid var(--secondary-color);
+        }
+        
+        .search-bar {
+            min-width: 260px;
+            max-width: 350px;
+            background: #f3f3f3;
+            border-radius: 8px;
+            padding: 0.25rem 0.75rem;
+            display: flex;
+            align-items: center;
+            margin-right: 1rem;
+        }
+        
+        .search-bar input {
+            border: none;
+            background: transparent;
+            outline: none;
+            width: 100%;
+            margin-left: 0.5rem;
+        }
+        
+        .icon-btn {
+            background: none;
+            border: none;
+            margin: 0 0.25rem;
+            padding: 0.25rem;
+            font-size: 1.3rem;
+            color: var(--text-color);
+            position: relative;
+        }
+        
+        .icon-btn.profile-icon i,
+        .icon-btn.cart-icon i {
+            font-size: 2rem;
+        }
+        
+        .cart-badge {
+            position: absolute;
+            top: 0;
+            right: 0;
+            background: var(--primary-color);
+            color: #fff;
+            border-radius: 50%;
+            font-size: 0.75rem;
+            width: 18px;
+            height: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
     </style>
 </head>
 <body>
     <nav class="navbar navbar-expand-lg navbar-light">
-        <div class="container">
-            <a class="navbar-brand" href="{% url 'home' %}">ARTMARKET</a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-label="Toggle navigation">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav me-auto">
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'home' %}">Home</a>
-                    </li>
-                    {% if user.is_authenticated %}
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'create_artwork' %}">Sell Art</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'cart' %}">Cart</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'orders' %}">Orders</a>
-                    </li>
+        <div class="container-fluid px-4">
+            <a class="navbar-brand" href="{% url 'home' %}">
+                <img src="{% static 'img/Black.jpg' %}" alt="Logo" height="40" style="border-radius: 8px;">
+            </a>
+            <div class="d-flex align-items-center ms-auto">
+                <form class="search-bar me-2" method="get" action="{% url 'home' %}">
+                    <i class="bi bi-search"></i>
+                    <input type="text" name="query" placeholder="Search art or artist" value="{{ request.GET.query|default:'' }}">
+                </form>
+                <a href="{% url 'profile' %}" class="icon-btn profile-icon" title="Profile">
+                    <i class="bi bi-person-circle"></i>
+                </a>
+                <a href="{% url 'cart' %}" class="icon-btn cart-icon position-relative" title="Cart">
+                    <i class="bi bi-bag"></i>
+                    {% if cart_count > 0 %}
+                        <span class="cart-badge">{{ cart_count }}</span>
                     {% endif %}
-                </ul>
-                <ul class="navbar-nav">
-                    <li class="nav-item">
-                        <div class="language-switcher">
-                            <form action="{% url 'set_language' %}" method="post" style="display: inline;">
-                                {% csrf_token %}
-                                <input type="hidden" name="next" value="{{ request.path }}">
-                                <input type="hidden" name="language" value="en">
-                                <button type="submit" class="btn btn-link p-0" aria-label="Switch to English">
-                                    <img src="https://flagcdn.com/w20/gb.png" alt="English" title="English">
-                                </button>
-                            </form>
-                            <form action="{% url 'set_language' %}" method="post" style="display: inline;">
-                                {% csrf_token %}
-                                <input type="hidden" name="next" value="{{ request.path }}">
-                                <input type="hidden" name="language" value="ru">
-                                <button type="submit" class="btn btn-link p-0" aria-label="Switch to Russian">
-                                    <img src="https://flagcdn.com/w20/ru.png" alt="Russian" title="Russian">
-                                </button>
-                            </form>
-                        </div>
-                    </li>
-                    {% if user.is_authenticated %}
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'profile' %}">Profile</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'account_logout' %}">Logout</a>
-                    </li>
-                    {% else %}
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'account_login' %}">Login</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'account_signup' %}">Sign Up</a>
-                    </li>
-                    {% endif %}
-                </ul>
+                </a>
             </div>
         </div>
     </nav>

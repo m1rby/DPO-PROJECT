@@ -39,11 +39,15 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django.contrib.sites',
+    
+    # Third party apps
     'allauth',
     'allauth.account',
     'allauth.socialaccount',
     'crispy_forms',
     'crispy_bootstrap5',
+    
+    # Local apps
     'marketplace',
 ]
 
@@ -72,6 +76,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'marketplace.context_processors.cart_count',
             ],
         },
     },
@@ -113,7 +118,7 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/5.1/topics/i18n/
 
-LANGUAGE_CODE = 'ru'
+LANGUAGE_CODE = 'en'
 
 TIME_ZONE = 'UTC'
 
@@ -125,11 +130,7 @@ USE_TZ = True
 
 LANGUAGES = [
     ('en', 'English'),
-    ('ru', 'Russian'),
-]
-
-LOCALE_PATHS = [
-    os.path.join(BASE_DIR, 'locale'),
+    ('ru', 'Русский'),
 ]
 
 # Static files (CSS, JavaScript, Images)
@@ -159,13 +160,23 @@ SITE_ID = 1
 CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
 CRISPY_TEMPLATE_PACK = "bootstrap5"
 
+# Email settings
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'abobaboba3356@gmail.com'  # Замените на ваш email
+EMAIL_HOST_PASSWORD = 'rflm kfls bnxu efej'  # Замените на пароль приложения
+DEFAULT_FROM_EMAIL = 'abobaboba3356@gmail.com'  # Замените на ваш email
+
 # Allauth settings
 ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_USERNAME_REQUIRED = True
-ACCOUNT_AUTHENTICATION_METHOD = 'email'
-ACCOUNT_EMAIL_VERIFICATION = 'optional'
+ACCOUNT_AUTHENTICATION_METHOD = 'username_email'
+ACCOUNT_EMAIL_VERIFICATION = 'mandatory'
+ACCOUNT_EMAIL_CONFIRMATION_EXPIRE_DAYS = 3
+ACCOUNT_EMAIL_CONFIRMATION_COOLDOWN = 180
+ACCOUNT_EMAIL_CONFIRMATION_AUTHENTICATED_REDIRECT_URL = '/'
 LOGIN_REDIRECT_URL = '/'
-ACCOUNT_LOGOUT_REDIRECT_URL = '/'
-
-# Email settings for development
-EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+LOGOUT_REDIRECT_URL = '/'
+LOGIN_URL = '/accounts/login/'

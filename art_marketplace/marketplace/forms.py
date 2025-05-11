@@ -1,5 +1,5 @@
 from django import forms
-from .models import Artwork, UserProfile
+from .models import Artwork, UserProfile, WithdrawalRequest
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
 
@@ -15,7 +15,16 @@ class UserRegistrationForm(UserCreationForm):
 class UserProfileForm(forms.ModelForm):
     class Meta:
         model = UserProfile
-        fields = ['bio', 'profile_picture']
+        fields = ['bio', 'profile_picture', 'phone', 'location', 'website', 'instagram', 'facebook', 'twitter']
+        widgets = {
+            'bio': forms.Textarea(attrs={'rows': 4, 'placeholder': 'Tell us about yourself...'}),
+            'phone': forms.TextInput(attrs={'placeholder': '+1 (234) 567-8900'}),
+            'location': forms.TextInput(attrs={'placeholder': 'City, Country'}),
+            'website': forms.URLInput(attrs={'placeholder': 'https://your-website.com'}),
+            'instagram': forms.TextInput(attrs={'placeholder': '@username'}),
+            'facebook': forms.TextInput(attrs={'placeholder': 'facebook.com/username'}),
+            'twitter': forms.TextInput(attrs={'placeholder': '@username'}),
+        }
 
 class ArtworkForm(forms.ModelForm):
     class Meta:
@@ -30,4 +39,25 @@ class ArtworkSearchForm(forms.Form):
     query = forms.CharField(required=False, label='Search')
     category = forms.CharField(required=False, label='Category')
     min_price = forms.DecimalField(required=False, label='Min Price')
-    max_price = forms.DecimalField(required=False, label='Max Price') 
+    max_price = forms.DecimalField(required=False, label='Max Price')
+
+class WithdrawalRequestForm(forms.ModelForm):
+    class Meta:
+        model = WithdrawalRequest
+        fields = ['amount', 'method', 'payment_details']
+        widgets = {
+            'amount': forms.NumberInput(attrs={'min': 1, 'step': 0.01}),
+            'method': forms.Select(attrs={'class': 'form-select'}),
+            'payment_details': forms.TextInput(attrs={'placeholder': 'Enter card number or PayPal email'}),
+        }
+
+    def __init__(self, user, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.user = user
+
+    def clean_amount(self):
+        amount = self.cleaned_data.get('amount')
+        profile = UserProfile.objects.get(user=self.user)
+        if amount > profile.balance:
+            raise forms.ValidationError("Insufficient balance.")
+        return amount 

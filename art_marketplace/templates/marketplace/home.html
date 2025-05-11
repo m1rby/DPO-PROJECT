@@ -1,44 +1,97 @@
 {% extends 'base.html' %}
 {% load crispy_forms_tags %}
 
-{% block title %}Art Marketplace - Home{% endblock %}
+{% block title %}ARTMARKET - Home{% endblock %}
 
 {% block content %}
-<div class="row mb-4">
-    <div class="col-md-6">
-        <h1>Discover Unique Artworks</h1>
-        <p class="lead">Explore and purchase beautiful artworks from talented artists around the world.</p>
+<div class="container">
+    <!-- Hero Section -->
+    <div class="hero-section text-center py-5 mb-5" style="background: linear-gradient(90deg, #6c5ce7 0%, #a29bfe 100%); color: #fff; border-radius: 24px; position: relative; overflow: hidden;">
+        <div data-aos="fade-up" data-aos-duration="1000">
+            <h1 class="display-3 fw-bold mb-3" style="letter-spacing: 2px;">Discover & Collect Unique Artworks</h1>
+            <p class="lead mb-4">Explore, buy, and sell amazing art from talented artists around the world. <br> Make your space inspiring!</p>
+            <a href="{% url 'create_artwork' %}" class="btn btn-lg btn-light px-5 py-3 shadow" style="font-weight: 600; border-radius: 30px;">Start Selling</a>
+        </div>
+        <img src="https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=900&q=80" alt="Art" style="position: absolute; right: 0; bottom: 0; width: 320px; opacity: 0.15; pointer-events: none;">
     </div>
-    <div class="col-md-6">
-        <form method="get" class="card p-3">
-            {{ search_form|crispy }}
-            <button type="submit" class="btn btn-primary">Search</button>
+
+    <!-- Modern Search Block -->
+    <div class="search-block mx-auto mb-5" data-aos="fade-up" data-aos-delay="150">
+        <form method="get" class="d-flex align-items-center bg-white shadow-lg p-3 rounded-4 position-relative" style="gap: 0.5rem;">
+            <span class="search-icon position-absolute" style="left: 22px; top: 50%; transform: translateY(-50%); color: #6c5ce7; font-size: 1.3rem;">
+                <i class="bi bi-search"></i>
+            </span>
+            <input type="text" name="query" class="form-control ps-5 py-2 border-0 bg-light rounded-pill" placeholder="Search art or artist..." value="{{ request.GET.query|default:'' }}" style="font-size: 1.1rem;">
+            <button type="submit" class="btn btn-primary rounded-pill px-4 py-2 ms-2" style="font-weight: 600; font-size: 1.1rem; box-shadow: 0 2px 8px rgba(108,92,231,0.10); transition: background 0.2s;">Search</button>
         </form>
     </div>
-</div>
 
-<div class="row">
-    {% for artwork in artworks %}
-    <div class="col-md-4 mb-4">
-        <div class="card h-100">
-            <img src="{{ artwork.image.url }}" class="card-img-top artwork-image" alt="{{ artwork.title }}">
-            <div class="card-body">
-                <h5 class="card-title">{{ artwork.title }}</h5>
-                <p class="card-text text-muted">by {{ artwork.artist.username }}</p>
-                <p class="card-text">{{ artwork.description|truncatewords:20 }}</p>
-                <div class="d-flex justify-content-between align-items-center">
-                    <span class="h5 mb-0">${{ artwork.price }}</span>
-                    <a href="{% url 'artwork_detail' artwork.pk %}" class="btn btn-primary">View Details</a>
+    <div class="row mb-4" data-aos="fade-up" data-aos-delay="200">
+        <div class="col-md-6">
+            <h2 class="fw-bold">Featured Artworks</h2>
+        </div>
+    </div>
+
+    <div class="row">
+        {% for artwork in artworks %}
+        <div class="col-md-4 mb-4" data-aos="zoom-in" data-aos-delay="{{ forloop.counter0|add:1 }}00">
+            <div class="card h-100 shadow-lg border-0 art-card" style="border-radius: 18px; transition: transform 0.3s, box-shadow 0.3s;">
+                {% if artwork.image %}
+                    <img src="{{ artwork.image.url }}" class="card-img-top artwork-image" alt="{{ artwork.title }}" style="height: 240px; object-fit: cover; border-radius: 18px 18px 0 0; transition: filter 0.3s;">
+                {% else %}
+                    <img src="/static/img/no-image.png" class="card-img-top artwork-image" alt="No image" style="height: 240px; object-fit: cover; border-radius: 18px 18px 0 0; transition: filter 0.3s;">
+                {% endif %}
+                <div class="card-body">
+                    <h5 class="card-title fw-bold">{{ artwork.title }}</h5>
+                    <p class="card-text text-muted mb-1">by {{ artwork.artist.username }}</p>
+                    <p class="card-text" style="min-height: 48px;">{{ artwork.description|truncatewords:20 }}</p>
+                    <div class="d-flex justify-content-between align-items-center mt-3">
+                        <span class="h5 mb-0 text-primary">${{ artwork.price }}</span>
+                        <a href="{% url 'artwork_detail' artwork.pk %}" class="btn btn-outline-primary">View</a>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
-    {% empty %}
-    <div class="col-12">
-        <div class="alert alert-info">
-            No artworks found matching your search criteria.
+        {% empty %}
+        <div class="col-12">
+            <div class="alert alert-info">
+                No artworks found for your search.
+            </div>
         </div>
+        {% endfor %}
     </div>
-    {% endfor %}
 </div>
+
+<!-- AOS Animation Library -->
+<link href="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.js"></script>
+<script>
+    AOS.init({ once: true });
+    // Card hover effect
+    document.querySelectorAll('.art-card').forEach(card => {
+        card.addEventListener('mouseenter', () => {
+            card.style.transform = 'translateY(-8px) scale(1.03)';
+            card.style.boxShadow = '0 8px 32px rgba(108,92,231,0.15)';
+        });
+        card.addEventListener('mouseleave', () => {
+            card.style.transform = '';
+            card.style.boxShadow = '';
+        });
+    });
+</script>
+<style>
+.hero-section {
+    box-shadow: 0 8px 32px rgba(108,92,231,0.12);
+    margin-bottom: 2.5rem;
+}
+.search-block form:focus-within {
+    box-shadow: 0 0 0 3px #a29bfe44;
+}
+.search-block input:focus {
+    background: #f3f0ff;
+}
+.art-card:hover .card-img-top {
+    filter: brightness(0.95) blur(1px);
+}
+</style>
 {% endblock %} 

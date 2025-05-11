@@ -1,44 +1,28 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from django.db.models import Q
-from .models import Artwork, UserProfile, Cart, Order
-from .forms import ArtworkForm, UserProfileForm, ArtworkSearchForm
+from django.db.models import Q, Sum
+from .models import Artwork, UserProfile, Cart, Order, Notification, WithdrawalRequest
+from .forms import ArtworkForm, UserProfileForm, ArtworkSearchForm, WithdrawalRequestForm
 from django.contrib.auth.models import User
 from django.utils import timezone
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST
 
 def get_template_name(template_name, request):
-    """Возвращает имя шаблона с учетом языка"""
-    if request.LANGUAGE_CODE == 'ru':
-        return template_name.replace('.html', '_ru.html')
     return template_name
 
-def get_message(message_key, request):
-    """Возвращает сообщение на нужном языке"""
+def get_message(message_key, request=None):
     messages = {
-        'artwork_created': {
-            'en': 'Artwork created successfully!',
-            'ru': 'Произведение успешно добавлено!'
-        },
-        'artwork_added_to_cart': {
-            'en': 'Artwork added to cart!',
-            'ru': 'Произведение добавлено в корзину!'
-        },
-        'order_placed': {
-            'en': 'Order placed successfully!',
-            'ru': 'Заказ успешно оформлен!'
-        },
-        'profile_updated': {
-            'en': 'Profile updated successfully!',
-            'ru': 'Профиль успешно обновлен!'
-        }
+        'artwork_created': 'Artwork created successfully!',
+        'artwork_added_to_cart': 'Artwork added to cart!',
+        'order_placed': 'Order placed successfully!',
+        'profile_updated': 'Profile updated successfully!',
     }
-    return messages[message_key][request.LANGUAGE_CODE]
+    return messages[message_key]
 
 def home(request):
-    artworks = Artwork.objects.filter(is_sold=False).order_by('-created_at')[:12]
+    artworks = Artwork.objects.filter(is_sold=False, is_approved=True)
     search_form = ArtworkSearchForm(request.GET)
     
     if search_form.is_valid():
@@ -47,7 +31,7 @@ def home(request):
         min_price = search_form.cleaned_data.get('min_price')
         max_price = search_form.cleaned_data.get('max_price')
         
-        if query:
+        if query is not None and query != '':
             artworks = artworks.filter(
                 Q(title__icontains=query) | 
                 Q(description__icontains=query) |
@@ -60,6 +44,7 @@ def home(request):
         if max_price:
             artworks = artworks.filter(price__lte=max_price)
     
+    artworks = artworks.order_by('-created_at')[:12]
     return render(request, get_template_name('marketplace/home.html', request), {
         'artworks': artworks,
         'search_form': search_form
@@ -73,8 +58,8 @@ def create_artwork(request):
             artwork = form.save(commit=False)
             artwork.artist = request.user
             artwork.save()
-            messages.success(request, get_message('artwork_created', request))
-            return redirect('artwork_detail', pk=artwork.pk)
+            messages.success(request, 'Your artwork has been submitted and will be published after admin approval.')
+            return redirect('profile')
     else:
         form = ArtworkForm()
     return render(request, get_template_name('marketplace/create_artwork.html', request), {'form': form})
@@ -94,18 +79,14 @@ def toggle_like(request, artwork_id):
 def artwork_detail(request, pk):
     artwork = get_object_or_404(Artwork, pk=pk)
     artwork.increment_views()  # Increment views when artwork is viewed
-    is_liked = False
-    if request.user.is_authenticated:
-        is_liked = request.user in artwork.likes.all()
     
     return render(request, get_template_name('marketplace/artwork_detail.html', request), {
-        'artwork': artwork,
-        'is_liked': is_liked
+        'artwork': artwork
     })
 
 @login_required
-def add_to_cart(request, pk):
-    artwork = get_object_or_404(Artwork, pk=pk)
+def add_to_cart(request, artwork_id):
+    artwork = get_object_or_404(Artwork, pk=artwork_id)
     cart_item, created = Cart.objects.get_or_create(
         user=request.user,
         artwork=artwork,
@@ -128,24 +109,47 @@ def cart(request):
 
 @login_required
 def checkout(request):
-    cart_items = Cart.objects.filter(user=request.user)
-    total = sum(item.artwork.price * item.quantity for item in cart_items)
-    
     if request.method == 'POST':
-        for item in cart_items:
-            Order.objects.create(
-                user=request.user,
-                artwork=item.artwork,
-                quantity=item.quantity,
-                total_price=item.artwork.price * item.quantity
-            )
-            item.artwork.is_sold = True
-            item.artwork.save()
-            item.delete()
+        cart_items = Cart.objects.filter(user=request.user)
+        total_amount = 0
         
-        messages.success(request, get_message('order_placed', request))
+        for cart_item in cart_items:
+            # Создаем заказ
+            order = Order.objects.create(
+                user=request.user,
+                artwork=cart_item.artwork,
+                quantity=cart_item.quantity,
+                total_price=cart_item.artwork.price * cart_item.quantity,
+                status='completed'  # Явно указываем статус completed
+            )
+            
+            # Обновляем баланс художника
+            artist_profile = UserProfile.objects.get(user=cart_item.artwork.artist)
+            artist_profile.balance += cart_item.artwork.price * cart_item.quantity
+            artist_profile.save()
+            
+            # Обновляем статус картины
+            cart_item.artwork.is_sold = True
+            cart_item.artwork.save()
+            
+            # Создаем уведомление для художника
+            create_notification(
+                cart_item.artwork.artist,
+                'artwork_sold',
+                cart_item.artwork,
+                f'Your artwork "{cart_item.artwork.title}" has been sold for ${cart_item.artwork.price}!'
+            )
+            
+            total_amount += cart_item.artwork.price * cart_item.quantity
+            
+            # Удаляем товар из корзины
+            cart_item.delete()
+        
+        messages.success(request, f'Your order has been placed successfully! Total amount: ${total_amount}')
         return redirect('orders')
     
+    cart_items = Cart.objects.filter(user=request.user)
+    total = sum(item.artwork.price * item.quantity for item in cart_items)
     return render(request, get_template_name('marketplace/checkout.html', request), {
         'cart_items': cart_items,
         'total': total
@@ -159,18 +163,111 @@ def orders(request):
 @login_required
 def profile(request):
     profile, created = UserProfile.objects.get_or_create(user=request.user)
-    if request.method == 'POST':
-        form = UserProfileForm(request.POST, request.FILES, instance=profile)
-        if form.is_valid():
-            form.save()
-            messages.success(request, get_message('profile_updated', request))
-            return redirect('profile')
-    else:
-        form = UserProfileForm(instance=profile)
-    
+    # Статистика
     artworks = Artwork.objects.filter(artist=request.user)
+    artworks_sold = artworks.filter(is_sold=True).count()
+    active_listings = artworks.filter(is_sold=False, is_approved=True).count()
+    
+    # Обновляем подсчет общей суммы продаж
+    total_sales = Order.objects.filter(
+        artwork__artist=request.user,
+        status='completed'
+    ).aggregate(Sum('total_price'))['total_price__sum'] or 0
+
+    # Обработка формы редактирования профиля и вывода средств
+    if request.method == 'POST':
+        if 'phone' in request.POST:  # Это форма редактирования профиля
+            profile.phone = request.POST.get('phone', '')
+            profile.location = request.POST.get('location', '')
+            profile.website = request.POST.get('website', '')
+            profile.instagram = request.POST.get('instagram', '')
+            profile.facebook = request.POST.get('facebook', '')
+            profile.twitter = request.POST.get('twitter', '')
+            profile.bio = request.POST.get('bio', '')
+            profile.save()
+            messages.success(request, 'Profile updated successfully!')
+            return redirect('profile')
+        else:  # Это форма вывода средств
+            amount = request.POST.get('amount')
+            method = request.POST.get('method')
+            payment_details = request.POST.get('payment_details')
+            if amount and method and payment_details:
+                try:
+                    amount = float(amount)
+                    if amount <= profile.balance:
+                        WithdrawalRequest.objects.create(
+                            user=request.user,
+                            amount=amount,
+                            method=method,
+                            payment_details=payment_details
+                        )
+                        messages.success(request, 'Withdrawal request sent for moderation.')
+                    else:
+                        messages.error(request, 'Insufficient balance.')
+                except ValueError:
+                    messages.error(request, 'Invalid amount.')
+            else:
+                messages.error(request, 'Please fill in all fields.')
+            return redirect('profile')  # <-- ВАЖНО: всегда редирект после POST!
+
+    withdrawals = WithdrawalRequest.objects.filter(user=request.user).order_by('-created_at')
     return render(request, get_template_name('marketplace/profile.html', request), {
-        'form': form,
         'profile': profile,
-        'artworks': artworks
-    }) 
+        'artworks': artworks,
+        'artworks_sold': artworks_sold,
+        'active_listings': active_listings,
+        'total_sales': total_sales,
+        'withdrawals': withdrawals,
+    })
+
+@login_required
+def notifications(request):
+    notifications = request.user.notifications.all()
+    return render(request, 'marketplace/notifications.html', {'notifications': notifications})
+
+@login_required
+def mark_notification_read(request, notification_id):
+    notification = get_object_or_404(Notification, id=notification_id, user=request.user)
+    notification.is_read = True
+    notification.save()
+    return redirect('notifications')
+
+def create_notification(user, notification_type, artwork=None, message=None):
+    if message is None:
+        if notification_type == 'artwork_approved':
+            message = f'Your artwork "{artwork.title}" has been approved and is now visible on the marketplace!'
+        elif notification_type == 'artwork_sold':
+            message = f'Your artwork "{artwork.title}" has been sold!'
+    
+    Notification.objects.create(
+        user=user,
+        notification_type=notification_type,
+        artwork=artwork,
+        message=message
+    )
+
+def approve_artwork(request, artwork_id):
+    artwork = get_object_or_404(Artwork, id=artwork_id)
+    artwork.is_approved = True
+    artwork.save()
+    create_notification(artwork.artist, 'artwork_approved', artwork)
+    return redirect('admin:marketplace_artwork_changelist')
+
+@login_required
+def delete_artwork(request, artwork_id):
+    artwork = get_object_or_404(Artwork, id=artwork_id)
+    
+    # Проверяем, является ли пользователь владельцем работы
+    if artwork.artist != request.user:
+        messages.error(request, 'You do not have permission to delete this artwork.')
+        return redirect('profile')
+    
+    # Проверяем, не продана ли работа
+    if artwork.is_sold:
+        messages.error(request, 'Cannot delete sold artwork.')
+        return redirect('profile')
+    
+    # Удаляем работу
+    artwork.delete()
+    messages.success(request, 'Artwork has been successfully deleted.')
+    return redirect('profile') 
