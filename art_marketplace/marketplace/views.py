@@ -8,6 +8,9 @@ from django.contrib.auth.models import User
 from django.utils import timezone
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST
+import requests
+from django.conf import settings
+from django.utils import translation
 
 def get_template_name(template_name, request):
     return template_name
@@ -270,4 +273,40 @@ def delete_artwork(request, artwork_id):
     # Удаляем работу
     artwork.delete()
     messages.success(request, 'Artwork has been successfully deleted.')
-    return redirect('profile') 
+    return redirect('profile')
+
+def signup(request):
+    with translation.override('en'):
+        from allauth.account.views import SignupView
+        class CustomSignupView(SignupView):
+            template_name = 'account/signup.html'
+            def form_valid(self, form):
+                recaptcha_response = self.request.POST.get('g-recaptcha-response')
+                data = {
+                    'secret': settings.RECAPTCHA_PRIVATE_KEY,
+                    'response': recaptcha_response
+                }
+                r = requests.post('https://www.google.com/recaptcha/api/siteverify', data=data)
+                result = r.json()
+                if not result.get('success'):
+                    return self.render_to_response(self.get_context_data(form=form, recaptcha_error='Invalid reCAPTCHA. Please try again.'))
+                return super().form_valid(form)
+        return CustomSignupView.as_view()(request)
+
+def login_view(request):
+    with translation.override('en'):
+        from allauth.account.views import LoginView
+        class CustomLoginView(LoginView):
+            template_name = 'account/login.html'
+            def form_valid(self, form):
+                recaptcha_response = self.request.POST.get('g-recaptcha-response')
+                data = {
+                    'secret': settings.RECAPTCHA_PRIVATE_KEY,
+                    'response': recaptcha_response
+                }
+                r = requests.post('https://www.google.com/recaptcha/api/siteverify', data=data)
+                result = r.json()
+                if not result.get('success'):
+                    return self.render_to_response(self.get_context_data(form=form, recaptcha_error='Invalid reCAPTCHA. Please try again.'))
+                return super().form_valid(form)
+        return CustomLoginView.as_view()(request) 

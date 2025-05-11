@@ -1,22 +1,35 @@
 {% extends "account/base.html" %}
 {% load i18n %}
+{% load static %}
 {% load crispy_forms_tags %}
 
-{% block title %}{% trans "Sign In" %}{% endblock %}
+{% block title %}Sign In{% endblock %}
 
-{% block subtitle %}{% trans "Sign In" %}{% endblock %}
+{% block subtitle %}Sign In{% endblock %}
 
 {% block content %}
+<div class="text-center mb-4">
+    <img src="{% static 'img/Black.jpg' %}" alt="Logo" height="40" style="border-radius: 12px;">
+</div>
 <form class="login" method="POST" action="{% url 'account_login' %}">
     {% csrf_token %}
-    {{ form|crispy }}
+    {% for field in form.visible_fields %}
+        <div class="mb-3">
+            {{ field|as_crispy_field }}
+        </div>
+    {% endfor %}
+    <div class="g-recaptcha mb-3 d-flex justify-content-center" data-sitekey="6LcRkDUrAAAAAGkJnyY3JgjphV_wU5xX8qONOq0Q"></div>
+    {% if recaptcha_error %}
+        <div class="alert alert-danger">{{ recaptcha_error }}</div>
+    {% endif %}
     {% if redirect_field_value %}
     <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}" />
     {% endif %}
-    <button class="btn btn-primary" type="submit">{% trans "Sign In" %}</button>
+    <button class="btn btn-primary" type="submit">Sign In</button>
     <div class="auth-links">
-        <a href="{% url 'account_signup' %}">{% trans "Sign Up" %}</a> |
-        <a href="{% url 'account_reset_password' %}">{% trans "Forgot Password?" %}</a>
+        <a href="{% url 'account_signup' %}">Sign Up</a> |
+        <a href="{% url 'account_reset_password' %}">Forgot Password?</a>
     </div>
 </form>
+<script src="https://www.google.com/recaptcha/api.js" async defer></script>
 {% endblock %} 

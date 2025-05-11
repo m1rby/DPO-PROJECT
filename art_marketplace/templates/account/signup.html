@@ -1,21 +1,55 @@
 {% extends "account/base.html" %}
+{% load static %}
 {% load i18n %}
 {% load crispy_forms_tags %}
 
-{% block title %}{% trans "Sign Up" %}{% endblock %}
+{% block title %}Sign Up{% endblock %}
 
-{% block subtitle %}{% trans "Sign Up" %}{% endblock %}
+{% block subtitle %}{% endblock %}
 
 {% block content %}
+<style>
+    #id_password1_helptext {
+        display: none !important;
+    }
+</style>
+<div class="text-center mb-4">
+    <img src="{% static 'img/Black.jpg' %}" alt="Logo" height="40" style="border-radius: 12px;">
+</div>
 <form class="signup" method="POST" action="{% url 'account_signup' %}">
     {% csrf_token %}
-    {{ form|crispy }}
+    {% for field in form.visible_fields %}
+        <div class="mb-3">
+            {{ field|as_crispy_field }}
+            {% if field.name == 'password1' %}
+                <ul class="text-muted small ps-3">
+                    <li>Your password can't be too similar to your other personal information.</li>
+                    <li>Your password must contain at least 8 characters.</li>
+                    <li>Your password can't be a commonly used password.</li>
+                    <li>Your password can't be entirely numeric.</li>
+                </ul>
+            {% endif %}
+        </div>
+    {% endfor %}
+    <div class="g-recaptcha mb-3 d-flex justify-content-center" data-sitekey="6LcRkDUrAAAAAGkJnyY3JgjphV_wU5xX8qONOq0Q"></div>
+    {% if recaptcha_error %}
+        <div class="alert alert-danger">{{ recaptcha_error }}</div>
+    {% endif %}
     {% if redirect_field_value %}
     <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}" />
     {% endif %}
-    <button class="btn btn-primary" type="submit">{% trans "Sign Up" %}</button>
+    <button class="btn btn-primary" type="submit">Sign Up</button>
     <div class="auth-links">
-        <a href="{% url 'account_login' %}">{% trans "Already have an account? Sign In" %}</a>
+        <a href="{% url 'account_login' %}">Already have an account? Sign In</a>
     </div>
 </form>
-{% endblock %} 
+<script src="https://www.google.com/recaptcha/api.js" async defer></script>
+{% endblock %}
+<script>
+// Убираем все help_text (русские подсказки) для всех полей
+window.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.mb-3 .form-text').forEach(function(el) {
+        el.style.display = 'none';
+    });
+});
+</script> 

@@ -13,4 +13,6 @@ urlpatterns = [
     path('notifications/<int:notification_id>/mark-read/', views.mark_notification_read, name='mark_notification_read'),
     path('profile/', views.profile, name='profile'),
     path('artwork/<int:artwork_id>/delete/', views.delete_artwork, name='delete_artwork'),
+    path('accounts/signup/', views.signup, name='account_signup'),
+    path('accounts/login/', views.login_view, name='account_login'),
 ] 

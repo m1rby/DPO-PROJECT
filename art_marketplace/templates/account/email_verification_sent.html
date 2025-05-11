@@ -1,0 +1,14 @@
+{% extends "account/base.html" %}
+{% load i18n %}
+{% block title %}{% trans "Email Verification Sent" %}{% endblock %}
+{% block content %}
+<div class="text-center">
+    <i class="bi bi-envelope-check display-1 text-primary mb-3"></i>
+    <h1 class="auth-title">{% trans "Подтвердите Ваш адрес электронной почты" %}</h1>
+    <p class="lead">
+        Мы отправили вам письмо с подтверждением. Перейдите по указанной ссылке, чтобы завершить процесс регистрации.<br>
+        Если вы не видите письмо с подтверждением в вашем основном почтовом ящике, проверьте папку "Спам".<br>
+        Пожалуйста, свяжитесь с нами, если вы не получите письмо с подтверждением в течение нескольких минут.
+    </p>
+</div>
+{% endblock %} 

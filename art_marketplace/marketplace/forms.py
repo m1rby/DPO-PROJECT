@@ -1,16 +1,32 @@
 from django import forms
 from .models import Artwork, UserProfile, WithdrawalRequest
-from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.contrib.auth.models import User
+from allauth.account.forms import SignupForm, LoginForm
 
-class UserRegistrationForm(UserCreationForm):
-    email = forms.EmailField(required=True)
-    first_name = forms.CharField(max_length=30, required=True)
-    last_name = forms.CharField(max_length=30, required=True)
+class UserRegistrationForm(SignupForm):
+    first_name = forms.CharField(max_length=30, required=True, widget=forms.TextInput(attrs={'placeholder': 'First Name'}), label='First Name')
+    last_name = forms.CharField(max_length=30, required=True, widget=forms.TextInput(attrs={'placeholder': 'Last Name'}), label='Last Name')
+    username = forms.CharField(max_length=150, required=True, widget=forms.TextInput(attrs={'placeholder': 'Username'}), label='Username')
+    email = forms.EmailField(required=True, widget=forms.EmailInput(attrs={'placeholder': 'Email'}), label='Email')
+    password1 = forms.CharField(label='Password', widget=forms.PasswordInput())
+    password2 = forms.CharField(label='Repeat password', widget=forms.PasswordInput())
 
-    class Meta:
-        model = User
-        fields = ('username', 'email', 'first_name', 'last_name', 'password1', 'password2')
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['username'].label = 'Username'
+        self.fields['email'].label = 'Email'
+        self.fields['password1'].label = 'Password'
+        self.fields['password2'].label = 'Repeat password'
+        self.fields['first_name'].label = 'First Name'
+        self.fields['last_name'].label = 'Last Name'
+
+    def save(self, request):
+        user = super().save(request)
+        user.first_name = self.cleaned_data['first_name']
+        user.last_name = self.cleaned_data['last_name']
+        user.save()
+        return user
 
 class UserProfileForm(forms.ModelForm):
     class Meta:
@@ -60,4 +76,15 @@ class WithdrawalRequestForm(forms.ModelForm):
         profile = UserProfile.objects.get(user=self.user)
         if amount > profile.balance:
             raise forms.ValidationError("Insufficient balance.")
-        return amount 
+        return amount
+
+class CustomAuthForm(LoginForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['login'].label = 'Username'
+        self.fields['password'].label = 'Password'
+        self.fields['login'].widget.attrs.update({'placeholder': 'Username'})
+        self.fields['password'].widget.attrs.update({'placeholder': 'Password'})
+
+    def login(self, request, redirect_url=None):
+        return super().login(request, redirect_url) 

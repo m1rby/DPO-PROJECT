@@ -1,5 +1,6 @@
 .auth-page {
-    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    background: url('/static/img/backs.jpg') no-repeat center center;
+    background-size: cover;
     min-height: 100vh;
     display: flex;
     align-items: center;

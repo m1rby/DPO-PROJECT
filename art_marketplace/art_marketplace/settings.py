@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     
     # Local apps
     'marketplace',
+    'django_recaptcha',
 ]
 
 MIDDLEWARE = [
@@ -165,9 +166,9 @@ EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
-EMAIL_HOST_USER = 'abobaboba3356@gmail.com'  # Замените на ваш email
-EMAIL_HOST_PASSWORD = 'rflm kfls bnxu efej'  # Замените на пароль приложения
-DEFAULT_FROM_EMAIL = 'abobaboba3356@gmail.com'  # Замените на ваш email
+EMAIL_HOST_USER = 'abobaboba3356@gmail.com'  #  email
+EMAIL_HOST_PASSWORD = 'rflm kfls bnxu efej'  # пароль приложения
+DEFAULT_FROM_EMAIL = 'abobaboba3356@gmail.com'  #  email
 
 # Allauth settings
 ACCOUNT_EMAIL_REQUIRED = True
@@ -180,3 +181,12 @@ ACCOUNT_EMAIL_CONFIRMATION_AUTHENTICATED_REDIRECT_URL = '/'
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/'
 LOGIN_URL = '/accounts/login/'
+
+# Настройки reCAPTCHA (замените на свои ключи)
+RECAPTCHA_PUBLIC_KEY = '6LcRkDUrAAAAAGkJnyY3JgjphV_wU5xX8qONOq0Q'
+RECAPTCHA_PRIVATE_KEY = '6LcRkDUrAAAAAAVYtD5cvgz76b0gROPvED4NV9VF'
+
+ACCOUNT_FORMS = {
+    'login': 'marketplace.forms.CustomAuthForm',
+    'signup': 'marketplace.forms.UserRegistrationForm',
+}
